@@ -4,15 +4,17 @@ trigger:
 variables:
   buildConfiguration: 'Release'
   releaseBranchName: 'release'
+  selfHostedPool: 'SecureAgents-SelfHosted'
+  managedPool: 'SecureAgents'
 
 stages:
 - stage: 'Build'
-  displayName: 'Build the web application'
+  displayName: 'Build on Self-Hosted Agent'
   jobs: 
   - job: 'Build'
     displayName: 'Build job'
     pool:
-      name: SecureAgents
+      name: $(selfHostedPool)
       demands:
       - npm
 
@@ -75,13 +77,13 @@ stages:
       artifact: drop
 
 - stage: 'Dev'
-  displayName: 'Deploy to the dev environment'
+  displayName: 'Deploy to the dev environment (Managed Pool)'
   dependsOn: Build
-  condition:  succeeded()
+  condition: succeeded()
   jobs:
   - deployment: Deploy
     pool:
-      name: SecureAgents
+      name: $(managedPool)
     environment: dev
     variables:
     - group: Release
@@ -100,12 +102,12 @@ stages:
               package: '$(Pipeline.Workspace)/drop/$(buildConfiguration)/*.zip'
 
 - stage: 'Staging'
-  displayName: 'Deploy to the staging environment'
+  displayName: 'Deploy to the staging environment (Managed Pool)'
   dependsOn: Dev
   jobs:
   - deployment: Deploy
     pool:
-      name: SecureAgents
+      name: $(managedPool)
     environment: staging
     variables:
     - group: 'Release'
